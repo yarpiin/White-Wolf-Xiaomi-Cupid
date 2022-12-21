@@ -3,7 +3,6 @@
  * MTD Oops/Panic logger
  *
  * Copyright © 2007 Nokia Corporation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * Author: Richard Purdie <rpurdie@openedhand.com>
  */
@@ -397,6 +396,11 @@ static void mtdoops_do_dump(struct kmsg_dumper *dumper,
 	char *pmsg_buffer_start = NULL;
 	struct pmsg_buffer_hdr *p_hdr = NULL;
 	int j, ret;
+
+	if(cxt->mtd == NULL) {
+		printk(KERN_ERR "mtdoops: init is not finish. Cannot write mtd logs \n");
+		return;
+	}
 
 	do_dump_count++;
 	printk(KERN_ERR "mtdoops: %s start , count = %d , page = %d, reason = %d, dump_count = %d\n",__func__,cxt->nextcount, cxt->nextpage,reason,do_dump_count);
