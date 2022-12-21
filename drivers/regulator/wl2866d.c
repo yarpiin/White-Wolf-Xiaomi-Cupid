@@ -2,7 +2,6 @@
  * WL2866D ON Semiconductor LDO PMIC Driver.
  *
  * Copyright (c) 2020 On XiaoMi.
- * Copyright (C) 2021 XiaoMi, Inc.
  * liuqinhong@xiaomi.com
  *
  * This package is free software; you can redistribute it and/or modify
@@ -29,7 +28,7 @@
 #define wl2866d_err(message, ...) \
         pr_err("[%s] : "message, __func__, ##__VA_ARGS__)
 #define wl2866d_debug(message, ...) \
-        pr_err("[%s] : "message, __func__, ##__VA_ARGS__)
+        pr_debug("[%s] : "message, __func__, ##__VA_ARGS__)
 
 #define WL2866D_REG_ENABLE      0x0E
 #define WL2866D_REG_DISCHARGE   0x02
