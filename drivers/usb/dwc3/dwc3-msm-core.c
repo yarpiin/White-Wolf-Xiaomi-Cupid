@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
@@ -3256,6 +3255,7 @@ static int dwc3_msm_prepare_suspend(struct dwc3_msm *mdwc, bool ignore_p3_state)
 					!mdwc->in_restart)) {
 		if (!atomic_read(&mdwc->in_p3)) {
 			dev_err(mdwc->dev, "Not in P3,aborting LPM sequence\n");
+			pm_runtime_mark_last_busy(mdwc->dev);
 			return -EBUSY;
 		}
 	}
@@ -3554,6 +3554,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 					"%s: %d device events pending, abort suspend\n",
 					__func__, evt->count / 4);
 				mutex_unlock(&mdwc->suspend_resume_mutex);
+				pm_runtime_mark_last_busy(mdwc->dev);
 				return -EBUSY;
 			}
 		}
@@ -3570,6 +3571,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 						__func__, dwc->gadget->state);
 			pr_err("%s(): LPM is not performed.\n", __func__);
 			mutex_unlock(&mdwc->suspend_resume_mutex);
+			pm_runtime_mark_last_busy(mdwc->dev);
 			return -EBUSY;
 		}
 	}
@@ -3589,6 +3591,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 			"%s: cable disconnected while not in idle otg state\n",
 			__func__);
 		mutex_unlock(&mdwc->suspend_resume_mutex);
+		pm_runtime_mark_last_busy(mdwc->dev);
 		return -EBUSY;
 	}
 
@@ -3599,7 +3602,6 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 		mutex_unlock(&mdwc->suspend_resume_mutex);
 		if (mdwc->in_host_mode)
 			pm_request_resume(&dwc->xhci->dev);
-
 		return ret;
 	}
 
@@ -3613,6 +3615,7 @@ static int dwc3_msm_suspend(struct dwc3_msm *mdwc, bool force_power_collapse)
 	dwc3_set_phy_speed_flags(mdwc);
 	/* Suspend HS PHY */
 	usb_phy_set_suspend(mdwc->hs_phy, 1);
+	usb_phy_set_suspend(mdwc->ss_phy, 1);
 
 	/*
 	 * Synopsys Superspeed PHY does not support ss_phy_irq, so to detect
@@ -4526,7 +4529,7 @@ static int dwc3_msm_set_role(struct dwc3_msm *mdwc, enum usb_role role)
 	mutex_lock(&mdwc->role_switch_mutex);
 	cur_role = dwc3_msm_get_role(mdwc);
 
-	dbg_log_string("cur_role:%s new_role:%s refcnt:%d\n", usb_role_string(cur_role),
+	pr_info("cur_role:%s new_role:%s refcnt:%d\n", usb_role_string(cur_role),
 				usb_role_string(role), mdwc->refcnt_dp_usb);
 
 	/*
@@ -5080,6 +5083,18 @@ static int dwc3_msm_core_init(struct dwc3_msm *mdwc)
 
 	if (mdwc->dwc3)
 		return 0;
+	ret = usb_phy_init(mdwc->hs_phy);
+	if (ret) {
+		dev_err(mdwc->dev, "failed to init HS PHY\n");
+		goto err;
+	}
+	if (dwc3_msm_get_max_speed(mdwc) >= USB_SPEED_SUPER) {
+		ret = usb_phy_init(mdwc->ss_phy);
+		if (ret) {
+			dev_err(mdwc->dev, "failed to init SS PHY\n");
+			goto err;
+		}
+        }
 
 	ret = usb_phy_init(mdwc->hs_phy);
 	if (ret) {
@@ -5482,7 +5497,7 @@ static int dwc3_msm_probe(struct platform_device *pdev)
 	 */
 	mdwc->lpm_flags = MDWC3_POWER_COLLAPSE | MDWC3_SS_PHY_SUSPEND;
 	atomic_set(&mdwc->in_lpm, 1);
-	pm_runtime_set_autosuspend_delay(mdwc->dev, 1000);
+	pm_runtime_set_autosuspend_delay(mdwc->dev, 500);
 	pm_runtime_use_autosuspend(mdwc->dev);
 	device_init_wakeup(mdwc->dev, 1);
 
@@ -5902,7 +5917,7 @@ static int dwc3_otg_start_host(struct dwc3_msm *mdwc, int on)
 		mdwc->in_host_mode = true;
 		dwc3_msm_override_pm_ops(&dwc->xhci->dev, mdwc->xhci_pm_ops, true);
 		pm_runtime_use_autosuspend(&dwc->xhci->dev);
-		pm_runtime_set_autosuspend_delay(&dwc->xhci->dev, 0);
+		pm_runtime_set_autosuspend_delay(&dwc->xhci->dev, 3000);
 		pm_runtime_allow(&dwc->xhci->dev);
 		pm_runtime_mark_last_busy(&dwc->xhci->dev);
 
@@ -6273,7 +6288,7 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 			 * which was incremented upon cable connect in
 			 * DRD_STATE_IDLE state
 			 */
-			pm_runtime_put_sync_suspend(mdwc->dev);
+			pm_runtime_put_sync_autosuspend(mdwc->dev);
 			dbg_event(0xFF, "!BSV psync",
 				atomic_read(&mdwc->dev->power.usage_count));
 			work = true;
