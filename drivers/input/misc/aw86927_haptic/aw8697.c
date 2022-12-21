@@ -4,7 +4,6 @@
  *
  *
  * Copyright (c) 2021 AWINIC Technology CO., LTD
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  *  Author: <chelvming@awinic.com.cn>
  *
@@ -451,14 +450,13 @@ static void aw8697_ram_loaded(const struct firmware *cont, void *context)
 	unsigned short check_sum = 0;
 
 	aw_info("%s enter\n", __func__);
-
 	if (!cont) {
-		aw_err("%s: failed to read %s\n", __func__, awinic_ram_name);
+		aw_err("%s: failed to read %s\n", __func__, awinic_ram_name[0]);
 		release_firmware(cont);
 		return;
 	}
 
-	aw_info("%s: loaded %s - size: %zu\n", __func__, awinic_ram_name,
+	aw_info("%s: loaded %s - size: %zu\n", __func__, awinic_ram_name[0],
 		cont ? cont->size : 0);
 	/*
 	 * for (i=0; i<cont->size; i++) {
@@ -513,7 +511,7 @@ static int aw8697_ram_update(struct aw8697 *aw8697)
 	aw_info("%s enter\n", __func__);
 
 	return request_firmware_nowait(THIS_MODULE, FW_ACTION_HOTPLUG,
-				       awinic_ram_name, aw8697->dev, GFP_KERNEL,
+				       awinic_ram_name[0], aw8697->dev, GFP_KERNEL,
 				       aw8697, aw8697_ram_loaded);
 }
 
@@ -4603,6 +4601,5 @@ int aw8697_ram_init(struct aw8697 *aw8697)
 #endif
 	return 0;
 }
-
 
 

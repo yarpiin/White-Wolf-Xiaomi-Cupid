@@ -4,7 +4,6 @@
  * Version: v1.1.3
  *
  * Copyright (c) 2019 AWINIC Technology CO., LTD
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  *  Author: Nick Li <zhangzetao@awinic.com.cn>
  *
@@ -1729,7 +1728,12 @@ static void aw8697_rtp_work_routine(struct work_struct *work)
 			release_firmware(rtp_file);
 		} else  {
 			vfree(aw8697_rtp);
-			aw8697_rtp = vmalloc(aw8697->ram.base_addr >> 2);
+			aw8697_rtp = NULL;
+			if(aw8697->ram.base_addr != 0) {
+				aw8697_rtp = vmalloc((aw8697->ram.base_addr >> 2) + sizeof(int));
+			} else {
+				pr_err("ram update not done yet, return !");
+			}
 			if (!aw8697_rtp) {
 				pr_err("%s: error allocating memory\n", __func__);
 				pm_relax(aw8697->dev);

@@ -217,6 +217,6 @@ struct haptic_audio {
 extern int CUSTOME_WAVE_ID;
 extern char awinic_rtp_name[][AWINIC_RTP_NAME_MAX];
 extern int awinic_rtp_name_len;
-extern char *awinic_ram_name;
+extern char *awinic_ram_name[2];
 
 #endif

@@ -9,7 +9,6 @@
  *
 
  * Copyright (c) 2021 AWINIC Technology CO., LTD
- * Copyright (C) 2021 XiaoMi, Inc.
 
  *
 
@@ -99,7 +98,7 @@ static const char *const pctl_names[] = {
 
 
 
-char *awinic_ram_name = "aw8697_haptic.bin";
+char *awinic_ram_name[] = {"aw8697_haptic.bin","aw8697_haptic_nv.bin"};
 
 
 

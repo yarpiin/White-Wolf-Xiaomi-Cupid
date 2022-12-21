@@ -212,6 +212,7 @@ struct aw86927 {
 	unsigned char ram_vbat_comp;
 	unsigned int vbat;
 	unsigned int lra;
+	unsigned int nv_flag;
 
 	struct aw86927_trig trig[AW86927_TRIG_NUM];
 
@@ -671,6 +672,11 @@ struct aw86927_container {
 #define AW86927_BIT_SYSCTRL4_INT_MODE_MASK		(~(1<<3))
 #define AW86927_BIT_SYSCTRL4_INT_MODE_EDGE		(1<<3)
 #define AW86927_BIT_SYSCTRL4_INT_MODE_LEVEL		(0<<3)
+
+#define AW86927_BIT_SYSCTRL4_GAIN_BYPASS_MASK		(~(1<<0))
+#define AW86927_BIT_SYSCTRL4_GAIN_BYPASS_ENABLE		(0<<0)
+#define AW86927_BIT_SYSCTRL4_GAIN_BYPASS_DISABLE	(1<<0)
+
 /* SYSCTRL5: reg 0x47 RW */
 #define AW86927_BIR_SYSCTRL5_INIT_VAL			(0x5A)
 #define AW86927_BIT_SYSCTRL5_EN_BRO_ADDR_MASK		(~(1<<7))
