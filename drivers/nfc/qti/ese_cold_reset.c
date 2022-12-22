@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  */
 
 #include <linux/slab.h>
@@ -331,7 +330,7 @@ int ese_cold_reset_ioctl(struct nfc_dev *nfc_dev, unsigned long arg)
 		nfc_dev->cold_reset.last_src_ese_prot =
 						ESE_COLD_RESET_ORIGIN_NONE;
 	} else
-		pr_info("ese cmd is %d\n", cold_reset_arg->sub_cmd);
+		pr_debug("ese cmd is %d\n", cold_reset_arg->sub_cmd);
 
 	ret = nfc_dev->cold_reset.status;
 
