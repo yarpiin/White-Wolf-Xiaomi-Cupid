@@ -2,7 +2,6 @@
  * leds-aw22xxx.c   aw22xxx led module
  *
  * Copyright (c) 2017 AWINIC Technology CO., LTD
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  *  Author: Nick Li <liweilei@awinic.com.cn>
  *
@@ -42,7 +41,6 @@
 #define AW_I2C_RETRY_DELAY          1
 #define AW_READ_CHIPID_RETRIES      2
 #define AW_READ_CHIPID_RETRY_DELAY  1
-
 
 /******************************************************
  *
@@ -398,6 +396,7 @@ static void aw22xxx_cfg_loaded (const struct firmware *cont, void *context)
 	if (!cont) {
 		pr_err ("%s: failed to read %s\n", __func__, aw22xxx_cfg_name[aw22xxx->effect]);
 		release_firmware (cont);
+		mutex_unlock (&aw22xxx->cfg_lock);
 		return;
 	}
 
@@ -462,6 +461,7 @@ static void aw22xxx_cfg_loaded (const struct firmware *cont, void *context)
 
 static int aw22xxx_cfg_update (struct aw22xxx *aw22xxx)
 {
+	int rc;
 	pr_info ("%s: enter\n", __func__);
 
 	if (aw22xxx->effect < (sizeof (aw22xxx_cfg_name) / AW22XXX_CFG_NAME_MAX)) {
@@ -477,7 +477,13 @@ static int aw22xxx_cfg_update (struct aw22xxx *aw22xxx)
 	}
 	mutex_lock (&aw22xxx->cfg_lock);
 
-	return request_firmware_nowait (THIS_MODULE, FW_ACTION_HOTPLUG, aw22xxx_cfg_name[aw22xxx->effect], aw22xxx->dev, GFP_KERNEL, aw22xxx, aw22xxx_cfg_loaded);
+	rc = request_firmware_nowait (THIS_MODULE, FW_ACTION_HOTPLUG, aw22xxx_cfg_name[aw22xxx->effect], aw22xxx->dev, GFP_KERNEL, aw22xxx, aw22xxx_cfg_loaded);
+	if(rc){
+		pr_err ("%s: load of '%s' failed: %d\n", __func__, aw22xxx_cfg_name[aw22xxx->effect], rc);
+		mutex_unlock (&aw22xxx->cfg_lock);
+	}
+
+	return rc;
 }
 
 static int aw22xxx_container_update (struct aw22xxx *aw22xxx, struct aw22xxx_container *aw22xxx_fw)
@@ -960,16 +966,19 @@ static ssize_t aw22xxx_hwen_store (struct device *dev, struct device_attribute *
 	struct aw22xxx *aw22xxx = container_of (led_cdev, struct aw22xxx, cdev);
 
 	unsigned int databuf[1] = { 0 };
-
-	if (1 == sscanf (buf, "%x", &databuf[0])) {
-		if (1 == databuf[0]) {
-			aw22xxx_hw_reset (aw22xxx);
-			aw22xxx_sys_init (aw22xxx);
-		} else {
-			aw22xxx_hw_off (aw22xxx);
+	if (aw22xxx->fw_flags == AW22XXX_FLAG_FW_OK){
+		if (1 == sscanf (buf, "%x", &databuf[0])) {
+			if (1 == databuf[0]) {
+				aw22xxx_hw_reset (aw22xxx);
+				aw22xxx_sys_init (aw22xxx);
+			} else {
+				aw22xxx_hw_off (aw22xxx);
+			}
 		}
 	}
-
+	else{
+		pr_err ("aw22xxx fw.bin update fail,can't handle hwen!!!\n");
+	}
 	return count;
 }
 
