@@ -523,4 +523,15 @@ config MI_THERMAL_MULTI_CHARGE
 	  Enable multi charge function in kernel, add two sysfs nodes in
 	  thermal_message.
 
+config  HAVE_CHARGE_TEMP
+	tristate "enable have charge temp node in thermal interface"
+	help
+		Enable display charge temp node in kernel, add one node in thermal_message 
+
 endif
+
+config HAVE_MULTI_SCREEN
+	bool "Have multi screen"
+	default n
+	help
+		Enable register two screen in driver
